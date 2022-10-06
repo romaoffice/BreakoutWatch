@@ -21,14 +21,19 @@ def format_value(val, step_size_str):
 
 def close_position(selected_market):
 	print("Trying close all position")
+	balance = client.get_account()
+	print(balance['balances'])
 	for i,market in enumerate(selected_market["market"]):
 		if "position" in selected_market["market"][i]:
 			print("Trying close all position from "+market["pair"])
 			orders = client.get_open_orders(symbol=market["pair"])
 			if(len(orders)>0):
 				orders = client._delete('openOrders', True, data={'symbol': market["pair"]})
-			tokenbalance = client.get_asset_balance(asset=market["symbol"])
-			qty = format_value(float(tokenbalance["free"]),market["stepSize"])
+			tokenbalance = 0
+			for bal in balance['balances']:
+				if bal['asset'].lower() == (market["symbol"]).lower():
+					tokenbalance = float(tokenbalance["free"])   	
+			qty = format_value(tokenbalance,market["stepSize"])
 			if(float(qty)>0):
 				order = client.create_order(
 				    symbol = market["pair"], 
