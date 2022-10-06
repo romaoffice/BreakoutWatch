@@ -5,6 +5,11 @@ import math
 
 apikey = "NwcCcwBGbDxflyeTLSK8NvMJZd3rvvq5e5VwchCQmGf3eP9qVphqrXAKNpcngX4O"
 apisecret = "UCdgcNQqiquKP6IIC5bzv5gIB6ya3PUqoGYJntNlmWXuUCBmtgoMbFfUMdSRhl7l"
+
+apikey = "dPj1eZ38dnCvpfaOkGgcNxtfWgVm5PFauAx08vh1pzwukJ9lrWy1xHXOpWUZWuNX"
+apisecret = "XigfaX6htn55xIczWYds6OOFjrG15ZfCiq5K1EQrX96LjuGBm6DXHb8B71cwx64v"
+
+
 dist = 0.1
 orderamount =20
 client = Client(apikey, apisecret)
@@ -62,10 +67,14 @@ def send_stoporder(market):
 
 def monitor(selected_market,maxPosition):
 	limit_positions = 0
+	positionlist = ""
 	for market in selected_market["market"]:
 		if "position" in market:
 			limit_positions = limit_positions + 1
+			positionlist = positionlist + " "+market["pair"]
 	if(limit_positions>=maxPosition):
+		print ("Position list")
+		print (positionlist)
 		return
 	positionlist =""
 	for i,market in enumerate(selected_market["market"]):
