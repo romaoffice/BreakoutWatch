@@ -4,7 +4,7 @@ from datetime import datetime
 import trading
 import targettoken
 import time 
-maxPosition = 5
+maxPosition = 9
 runmode = 0 #medium risk
 # runmode = 1 #Conservative
 # runmode = 2 #high risk
