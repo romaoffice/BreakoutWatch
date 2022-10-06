@@ -1,0 +1,99 @@
+Basic description: From the universe of TOP100 cryptocurrencies according to Market Cap select the 10 most trending currencies and on those trade a breakout at a certain level. Basic calculations are based on daily data.
+
+Description of the rules:
+
+1. Universe: TOP100 cryptocurrencies according to Market Cap.
+2. The ranking of these cryptocurrencies by trend condition from most trending to least least trending. Based on daily bars.
+3. Based on trend conditions, we exclude cryptocurrencies that are not suitable for breakout trading on a given day.
+4. A set of cryptocurrencies will be created where we wait for a possible breakout.
+5. On these cryptocurrencies, we find out the level where we want to enter the market. This level is calculated as the high of the previous 2 days and a multiple of the ATR indicator.
+6. Periodically, based on 5-minute intervals, we monitor how far the cryptocurrency price is from its stop entry level (5.).
+7. For the ten cryptocurrencies that are closest to their stop entry level, we enter stop market orders into the market.
+8. Based on regular 5-minute monitoring, we monitor that we have placed a maximum of 10 stop market orders on the 10 cryptocurrencies that are closest to our stop market level.
+9. If necessary, we cancel stop orders and enter new ones so that we are always in no more than 10 cryptocurrencies that are closest to our stop market level.
+10. If there is an entry, we set a stop-loss and exit the position at the close of the entry daily bar.
+11. We are flat on all postition on the close of the daily bar. All positions closed and stop market orders canceled.
+12. We make new calculations for ranking and filter conditions (2.,3.) and repeat the whole process.
+
+
+
+Medium Risk
+
+maxPosition = 12; // 12 positions max. Universe: TOP100 coins (ex. stable coins and Luna)
+
+
+positionScore= 1000 + Ref(ROC(C,7),-1); // Ranking for stop orders placement. 
+At the close of each day, the coins are ordered from the strongest trending to the least trending. 
+Rate of change (7 days)
+
+BreakoutLevelLong = Max(Ref(H,-1),Ref(H,-2)) + 0.25*Ref(ATR(7),-1); // Breakout level for stop order placement. Maximum for the last 2 days + 0.25 ATR(7)
+
+
+Buy= 
+	H>BreakoutLevelLong AND 
+	Ref(Close,-1) > Ref(MA(Close,20),-1) AND 
+	Ref(ROC(C,30),-1) > Ref(ROC(C,7),-1) AND 
+	Ref(ROC(C,30),-1) > 0; // Conditions for entering the trade. 
+	1. breakout level. 
+	2. Close>MA20. 
+	3. ROC(30)>ROC(7) 
+	4. ROC(30)>0; 
+	   First of all you're ranking the coins according to positionScore. 
+	   Then you go Top to Bottom and look at the other conditions to be met. 
+	   And you're entering stop orders if the conditions above are met.
+
+BuyPrice = Max(Open,BreakoutLevelLong);
+
+Sell=True; // Close on close of the daily bar (Max. 24 hours in position)
+SellPrice = Close;
+
+11:58 PM
+Hello, Serhil. Our preference is to use Trading View. But if it becomes impractical, then we can use Python direct into the exchanges. This is only an experimental phase. If it works for us, then we will look to put it on Trading View if possible, so that all api signals to the different brokers will originate from one source. Thanks. I have attached the Amibroker code.
+
+
+
+Conservative
+
+maxPosition = 15; // 15 positions max. Universe: TOP100 coins (ex. stable coins and Luna)
+
+
+positionScore= 1000 + Ref(ROC(C,7),-1); // Ranking for stop orders placement. At the close of each day, the coins are ordered from the strongest trending to the least trending. Rate of change (7 days)
+
+
+BreakoutLevelLong = Max(Ref(H,-1),Ref(H,-2)) + 0.5*Ref(ATR(7),-1); // Breakout level for stop order placement. Maximum for the last 2 days + 0.5 ATR(7)
+
+
+Buy= H>BreakoutLevelLong AND Ref(Close,-1) > Ref(MA(Close,20),-1) AND Ref(ROC(C,30),-1) > Ref(ROC(C,7),-1) AND Ref(ROC(C,30),-1) > 0; // Conditions for entering the trade. 1. breakout level. 2. Close>MA20. 3. ROC(30)>ROC(7) 4. ROC(30)>0; First of all you're ranking the coins according to positionScore. Then you go Top to Bottom and look at the other conditions to be met. And you're entering stop orders if the conditions above are met.
+
+BuyPrice = Max(Open,BreakoutLevelLong);
+
+
+Sell=True; // Close on close of the daily bar (Max. 24 hours in position)
+
+
+SellPrice = Close;
+
+
+
+High Risk
+
+maxPosition = 10; // 10 positions max. Universe: TOP100 coins (ex. stable coins and Luna)
+
+
+positionScore= 1000 + Ref(ROC(C,7),-1); // Ranking for stop orders placement. At the close of each day, the coins are ordered from the strongest trending to the least trending. Rate of change (7 days)
+
+
+BreakoutLevelLong = Max(Ref(H,-1),Ref(H,-2)) + 0.25*Ref(ATR(7),-1); // Breakout level for stop order placement. Maximum for the last 2 days + 0.5 ATR(7)
+
+
+Buy= H>BreakoutLevelLong AND Ref(Close,-1) > Ref(MA(Close,20),-1) AND Ref(ROC(C,30),-1) > Ref(ROC(C,7),-1) AND Ref(ROC(C,30),-1) > 0; // Conditions for entering the trade. 1. breakout level. 2. Close>MA20. 3. ROC(30)>ROC(7) 4. ROC(30)>0; First of all you're ranking the coins according to positionScore. Then you go Top to Bottom and look at the other conditions to be met. And you're entering stop orders if the conditions above are met.
+
+BuyPrice = Max(Open,BreakoutLevelLong);
+
+
+Sell=Tomorrow Close; // Close on close of the next daily bar (Max. 48 hours in position)
+
+
+SellPrice = Close;
+
+

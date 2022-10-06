@@ -1,0 +1,51 @@
+{
+    "mode": 0,
+    "date": "2022_10_06",
+    "market": [
+        {
+            "symbol": "MKR",
+            "pair": "MKRUSDT",
+            "tickSize": "1.00000000",
+            "stepSize": "0.00010000",
+            "score": 1014.0730717185386,
+            "breakoutlevel": 879.9523156699425,
+            "check_long_condition": true
+        },
+        {
+            "symbol": "HNT",
+            "pair": "HNTUSDT",
+            "tickSize": "0.01000000",
+            "stepSize": "0.01000000",
+            "score": 1013.1474103585657,
+            "breakoutlevel": 5.926673462971796,
+            "check_long_condition": true
+        },
+        {
+            "symbol": "ENS",
+            "pair": "ENSUSDT",
+            "tickSize": "0.01000000",
+            "stepSize": "0.01000000",
+            "score": 1011.3231552162849,
+            "breakoutlevel": 18.08076831326231,
+            "check_long_condition": true
+        },
+        {
+            "symbol": "UNI",
+            "pair": "UNIUSDT",
+            "tickSize": "0.01000000",
+            "stepSize": "0.01000000",
+            "score": 1006.7398119122257,
+            "breakoutlevel": 6.9580137113255685,
+            "check_long_condition": true
+        },
+        {
+            "symbol": "DOGE",
+            "pair": "DOGEUSDT",
+            "tickSize": "0.00001000",
+            "stepSize": "1.00000000",
+            "score": 1006.4410121590536,
+            "breakoutlevel": 0.06774504742840314,
+            "check_long_condition": true
+        }
+    ]
+}
