@@ -4,12 +4,15 @@ from datetime import datetime
 import trading
 import targettoken
 import time 
-maxPosition = 9
-runmode = 0 #medium risk
-# runmode = 1 #Conservative
-# runmode = 2 #high risk
+# runmode = 0 #medium risk
+# maxPosition = 9
+# runmode = 1 #conservative
+# maxPosition = 10
+runmode = 2 #highrisk
+maxPosition = 10
 try:
     while True:
+        print("Run mode",runmode)
         dateTimeObj = datetime.now()
         today_string = dateTimeObj.strftime("%Y_%m_%d")
 
@@ -21,8 +24,8 @@ try:
         if selected_market["mode"]!=runmode :
             needupdate = True
         if (runmode==2):
-            date_object1 = datetime.datetime.strptime(selected_market["date"], "%Y_%m_%d").date()
-            date_object2 = datetime.datetime.strptime(today_string, "%Y_%m_%d").date()
+            date_object1 = datetime.strptime(selected_market["date"], "%Y_%m_%d").date()
+            date_object2 = datetime.strptime(today_string, "%Y_%m_%d").date()
             dayspan = date_object2-date_object1
             if dayspan.days>1:
                 needupdate = True

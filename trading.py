@@ -3,12 +3,15 @@ from targettoken import update_status
 from binance.enums import *
 import math
 
-apikey = "NwcCcwBGbDxflyeTLSK8NvMJZd3rvvq5e5VwchCQmGf3eP9qVphqrXAKNpcngX4O"
-apisecret = "UCdgcNQqiquKP6IIC5bzv5gIB6ya3PUqoGYJntNlmWXuUCBmtgoMbFfUMdSRhl7l"
-
-apikey = "dPj1eZ38dnCvpfaOkGgcNxtfWgVm5PFauAx08vh1pzwukJ9lrWy1xHXOpWUZWuNX"
-apisecret = "XigfaX6htn55xIczWYds6OOFjrG15ZfCiq5K1EQrX96LjuGBm6DXHb8B71cwx64v"
-
+#medium
+# apikey = "dPj1eZ38dnCvpfaOkGgcNxtfWgVm5PFauAx08vh1pzwukJ9lrWy1xHXOpWUZWuNX"
+# apisecret = "XigfaX6htn55xIczWYds6OOFjrG15ZfCiq5K1EQrX96LjuGBm6DXHb8B71cwx64v"
+#conservative
+# apikey = "EH8ZJrqakQauODcFL8ScIRwtCVwZqy3AvgeoseO089fDGi0StwA0YY9Y6pI8o9X0"
+# apisecret = "bQsYq6D0tr1Boqq6nBDHT4loElO0bO2cB1xDbAMhXYYRP59aFDUTF2G3WglUsmRj"
+#highrisk
+apikey = "Fsy30e2heBOVQT2XP7XRfJ94uEp16YIbq5rw1NjeRMtTsz825mqgDKbo82pWTWi2"
+apisecret = "1WVA9foG5IUx5CiNZ1B9bLlI93WFYqWpTokBodnShviiAkc0uUp0KAV7y5cHXUkc"
 
 dist = 0.1
 orderamount =20
@@ -27,7 +30,6 @@ def format_value(val, step_size_str):
 def close_position(selected_market):
 	print("Trying close all position")
 	balance = client.get_account()
-	print(balance['balances'])
 	for i,market in enumerate(selected_market["market"]):
 		if "position" in selected_market["market"][i]:
 			print("Trying close all position from "+market["pair"])
@@ -37,7 +39,7 @@ def close_position(selected_market):
 			tokenbalance = 0
 			for bal in balance['balances']:
 				if bal['asset'].lower() == (market["symbol"]).lower():
-					tokenbalance = float(tokenbalance["free"])   	
+					tokenbalance = float(bal["free"])   	
 			qty = format_value(tokenbalance,market["stepSize"])
 			if(float(qty)>0):
 				order = client.create_order(
