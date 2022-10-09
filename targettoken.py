@@ -5,7 +5,6 @@ import pandas as pd
 from ta.volatility import AverageTrueRange
 from ta.trend import SMAIndicator
 from binance import Client
-import trading
 
 stablecoin = ['usdp','cusdc','usdt','usdc','busd','dai']
 
@@ -57,7 +56,7 @@ def convert_df_candles(candles):
 
 def get_score(candles):
 
-    prevclose = float(candles[len(candles)-7][4])
+    prevclose = float(candles[len(candles)-8][4])
     curclose = float(candles[len(candles)-1][4])
     score = 1000+100*(curclose-prevclose)/prevclose
     return score
@@ -82,8 +81,8 @@ def check_long_condition(df_candles):
     ma = maclass.sma_indicator()
     if df_candles["close"].iloc[-1] <= ma.iloc[-1]:
         return False
-    roc30 = 100*(df_candles["close"].iloc[-1]-df_candles["close"].iloc[-30])/df_candles["close"].iloc[-30]
-    roc7 = 100*(df_candles["close"].iloc[-1]-df_candles["close"].iloc[-7])/df_candles["close"].iloc[-7]
+    roc30 = 100*(df_candles["close"].iloc[-1]-df_candles["close"].iloc[-31])/df_candles["close"].iloc[-31]
+    roc7 = 100*(df_candles["close"].iloc[-1]-df_candles["close"].iloc[-8])/df_candles["close"].iloc[-8]
 
     if roc30<=0:
         return False
@@ -98,12 +97,13 @@ def update_token_list(runmode,maxPosition,today_string):
     # top100 = {"BNB":{"symbol":"BNB"},"ETH":{"symbol":"ETH"},"MATIC":{"symbol":"MATIC"},"BTC":{"symbol":"BTC"}}
     #top100 = {"BNB":{"symbol":"BNB"}}
     # get market depth
-    # client = Client("dPj1eZ38dnCvpfaOkGgcNxtfWgVm5PFauAx08vh1pzwukJ9lrWy1xHXOpWUZWuNX", "XigfaX6htn55xIczWYds6OOFjrG15ZfCiq5K1EQrX96LjuGBm6DXHb8B71cwx64v")
+    #client = Client("dPj1eZ38dnCvpfaOkGgcNxtfWgVm5PFauAx08vh1pzwukJ9lrWy1xHXOpWUZWuNX", "XigfaX6htn55xIczWYds6OOFjrG15ZfCiq5K1EQrX96LjuGBm6DXHb8B71cwx64v")
     client = Client("", "")
 
     print("Getting trend score,breakout level from binance price data")
     # prepare market data for binance
     info = client.get_exchange_info()
+    print("Got exchange info");
     for pair in info["symbols"]:
         if pair["baseAsset"] in top100 and pair["quoteAsset"]=="USDT":
             print("Getting trend score for ",pair["symbol"])
@@ -118,12 +118,13 @@ def update_token_list(runmode,maxPosition,today_string):
             if(len(candles)>30):
                 df_candles = convert_df_candles(candles)
                 top100[pair["baseAsset"]]["score"] = get_score(candles)
+                print(pair["baseAsset"],top100[pair["baseAsset"]]["score"])
                 top100[pair["baseAsset"]]["breakoutlevel"] = get_breakoutlevel(df_candles,runmode)
                 top100[pair["baseAsset"]]["check_long_condition"] = check_long_condition(df_candles)
             else:
                 del top100[pair["baseAsset"]]
 
-
+    print(top100)
     #sorting
     selected_market = []
     for num in range(0, maxPosition):

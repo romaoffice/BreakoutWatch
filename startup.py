@@ -4,12 +4,12 @@ from datetime import datetime
 import trading
 import targettoken
 import time 
-# runmode = 0 #medium risk
-# maxPosition = 9
+runmode = 0 #medium risk
+maxPosition = 12
 # runmode = 1 #conservative
+# maxPosition = 15
+# runmode = 2 #highrisk
 # maxPosition = 10
-runmode = 2 #highrisk
-maxPosition = 10
 try:
     while True:
         print("Run mode",runmode)

@@ -4,15 +4,15 @@ from binance.enums import *
 import math
 
 #medium
-# apikey = "dPj1eZ38dnCvpfaOkGgcNxtfWgVm5PFauAx08vh1pzwukJ9lrWy1xHXOpWUZWuNX"
-# apisecret = "XigfaX6htn55xIczWYds6OOFjrG15ZfCiq5K1EQrX96LjuGBm6DXHb8B71cwx64v"
+apikey = "dPj1eZ38dnCvpfaOkGgcNxtfWgVm5PFauAx08vh1pzwukJ9lrWy1xHXOpWUZWuNX"
+apisecret = "XigfaX6htn55xIczWYds6OOFjrG15ZfCiq5K1EQrX96LjuGBm6DXHb8B71cwx64v"
 #conservative
-# apikey = "EH8ZJrqakQauODcFL8ScIRwtCVwZqy3AvgeoseO089fDGi0StwA0YY9Y6pI8o9X0"
-# apisecret = "bQsYq6D0tr1Boqq6nBDHT4loElO0bO2cB1xDbAMhXYYRP59aFDUTF2G3WglUsmRj"
-#highrisk
-apikey = "Fsy30e2heBOVQT2XP7XRfJ94uEp16YIbq5rw1NjeRMtTsz825mqgDKbo82pWTWi2"
-apisecret = "1WVA9foG5IUx5CiNZ1B9bLlI93WFYqWpTokBodnShviiAkc0uUp0KAV7y5cHXUkc"
+# apikey = "bFVG0dhVotQul7HeVDNe6fiT8H75SJxfhiW07cHcpHz5UdGrvMBXd2obAFQIwHTn"
+# apisecret = "ONg61BSxzm3KFsNDuQoe45OfeOeYwIy2lAh6Pc1peBrba3xDCHbWduBZX4Cxdd3Y"
 
+#highrisk
+# apikey = "WVgEoTkWR9EFtCijEYXez4if654eskAhF29bvQazyDBht7uBJm8jBFL14lbOtHe3"
+# apisecret = "aRf9pLikKJXyGY7JFVFRw5jsWn2S5N6BlPiYCHqhyEkBYXWEpaQkyMjxosyVrIgI"
 dist = 0.1
 orderamount =20
 client = Client(apikey, apisecret)
@@ -20,11 +20,15 @@ client = Client(apikey, apisecret)
 def step_size_to_precision(ss):
     return ss.find('1') - 1
 
-
+def round_down(value, decimals):
+    factor = 1 / (10 ** decimals)
+    return (value // factor) * factor
 def format_value(val, step_size_str):
 	precision = step_size_to_precision(step_size_str)
 	if precision > 0:
-		return "{:0.0{}f}".format(val, precision)
+		v = round_down(float(val),int(precision))
+		r = "{:0.0{}f}".format(v, precision)
+		return r
 	return math.trunc(int(val))	
 
 def close_position(selected_market):
@@ -39,7 +43,7 @@ def close_position(selected_market):
 			tokenbalance = 0
 			for bal in balance['balances']:
 				if bal['asset'].lower() == (market["symbol"]).lower():
-					tokenbalance = float(bal["free"])   	
+					tokenbalance = float(bal["free"])   
 			qty = format_value(tokenbalance,market["stepSize"])
 			if(float(qty)>0):
 				order = client.create_order(
