@@ -2,3 +2,4 @@ python-binance==1.0.16
 pandas==1.5.0
 requests==2.22.0
 ta==0.10.2
+ccxt==1.95.30

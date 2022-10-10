@@ -5,9 +5,13 @@ import pandas as pd
 from ta.volatility import AverageTrueRange
 from ta.trend import SMAIndicator
 from binance import Client
+import ccxt
 
 stablecoin = ['usdp','cusdc','usdt','usdc','busd','dai']
-
+filename = 'data.json'
+def set_file_name(name):
+    global filename
+    filename = name
 def get_top_100():
     top100 = {}
     while len(top100)==0:
@@ -49,9 +53,8 @@ def convert_df_candles(candles):
         low_p.append(float(item[3]))
         close_p.append(float(item[4]))
         volume_p.append(float(item[5]))
-        close_t.append(float(item[6]))
-    pd_data = pd.DataFrame(list(zip(open_t, open_p,high_p,low_p,close_p,volume_p,close_t)),
-               columns =['open_t', 'open','high','low','close','volume','close_t'])
+    pd_data = pd.DataFrame(list(zip(open_t, open_p,high_p,low_p,close_p,volume_p)),
+               columns =['open_t', 'open','high','low','close','volume'])
     return pd_data
 
 def get_score(candles):
@@ -91,47 +94,57 @@ def check_long_condition(df_candles):
 
     return True
 
-def update_token_list(runmode,maxPosition,today_string):
+def update_token_list(runmode,maxPosition,today_string,apikey,secret):
     print("Getting Universe Top 100 coins from coingeko")
     top100 = get_top_100()
     # top100 = {"BNB":{"symbol":"BNB"},"ETH":{"symbol":"ETH"},"MATIC":{"symbol":"MATIC"},"BTC":{"symbol":"BTC"}}
     #top100 = {"BNB":{"symbol":"BNB"}}
     # get market depth
     #client = Client("dPj1eZ38dnCvpfaOkGgcNxtfWgVm5PFauAx08vh1pzwukJ9lrWy1xHXOpWUZWuNX", "XigfaX6htn55xIczWYds6OOFjrG15ZfCiq5K1EQrX96LjuGBm6DXHb8B71cwx64v")
-    client = Client("", "")
+    #client = Client("", "")
+    
+    exchange = ccxt.binance({
+        'apiKey': apikey,
+        'secret': secret,
+        'options': {
+            'defaultType': 'future',
+        },
+    })
 
     print("Getting trend score,breakout level from binance price data")
     # prepare market data for binance
-    info = client.get_exchange_info()
+    info = exchange.load_markets()
     print("Got exchange info");
-    for pair in info["symbols"]:
-        if pair["baseAsset"] in top100 and pair["quoteAsset"]=="USDT":
-            print("Getting trend score for ",pair["symbol"])
-            top100[pair["baseAsset"]]["pair"] = pair["symbol"]
-            for filteritem in pair["filters"]:
+    for pair in top100:
+        if(pair+"/USDT") in info:
+            pairinfo = info[pair+"/USDT"]
+            symbol = pairinfo["info"]["symbol"]
+            print("Getting trend score for ",symbol)
+            top100[pairinfo["baseId"]]["pair"] = symbol
+            for filteritem in pairinfo["info"]["filters"]:
                 if(filteritem["filterType"]=="PRICE_FILTER"):
-                    top100[pair["baseAsset"]]["tickSize"] = filteritem["tickSize"]
-                if(filteritem["filterType"]=="LOT_SIZE"):
-                    top100[pair["baseAsset"]]["stepSize"] = filteritem["stepSize"]
-            candles = client.get_klines(symbol=pair["symbol"], interval=Client.KLINE_INTERVAL_1DAY)
+                    top100[pairinfo["baseId"]]["tickSize"] = filteritem["tickSize"]
+                if(filteritem["filterType"]=="MARKET_LOT_SIZE"):
+                    top100[pairinfo["baseId"]]["stepSize"] = filteritem["stepSize"]
+
+            candles = exchange.fetchOHLCV (symbol, '1d')
             del candles[-1]
             if(len(candles)>30):
                 df_candles = convert_df_candles(candles)
-                top100[pair["baseAsset"]]["score"] = get_score(candles)
-                print(pair["baseAsset"],top100[pair["baseAsset"]]["score"])
-                top100[pair["baseAsset"]]["breakoutlevel"] = get_breakoutlevel(df_candles,runmode)
-                top100[pair["baseAsset"]]["check_long_condition"] = check_long_condition(df_candles)
+                top100[pairinfo["baseId"]]["score"] = get_score(candles)
+                print(pairinfo["baseId"],top100[pairinfo["baseId"]]["score"])
+                top100[pairinfo["baseId"]]["breakoutlevel"] = get_breakoutlevel(df_candles,runmode)
+                top100[pairinfo["baseId"]]["check_long_condition"] = check_long_condition(df_candles)
             else:
-                del top100[pair["baseAsset"]]
+                top100[pairinfo["baseId"]]["nocandle"] = True
 
-    print(top100)
     #sorting
     selected_market = []
     for num in range(0, maxPosition):
         maxscore = 0
         selectedtoken = ""
         for token in top100:
-            if(("check_long_condition" in top100[token]) and top100[token]["check_long_condition"]  and top100[token]["score"]>maxscore):
+            if (not("nocandle" in top100[token]) and  ("check_long_condition" in top100[token]) and top100[token]["check_long_condition"]  and top100[token]["score"]>maxscore):
                 selectedtoken = token
                 maxscore = top100[token]["score"]
         if(selectedtoken!=""):
@@ -151,5 +164,5 @@ def update_token_list(runmode,maxPosition,today_string):
     return stored_selected_market
 
 def update_status(stored_selected_market):
-    with open('data.json', 'w', encoding='utf-8') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         json.dump(stored_selected_market, f, ensure_ascii=False, indent=4)

@@ -1,21 +1,8 @@
-from binance import Client
 from targettoken import update_status
-from binance.enums import *
 import math
+import ccxt
 
-#medium
-apikey = "dPj1eZ38dnCvpfaOkGgcNxtfWgVm5PFauAx08vh1pzwukJ9lrWy1xHXOpWUZWuNX"
-apisecret = "XigfaX6htn55xIczWYds6OOFjrG15ZfCiq5K1EQrX96LjuGBm6DXHb8B71cwx64v"
-#conservative
-# apikey = "bFVG0dhVotQul7HeVDNe6fiT8H75SJxfhiW07cHcpHz5UdGrvMBXd2obAFQIwHTn"
-# apisecret = "ONg61BSxzm3KFsNDuQoe45OfeOeYwIy2lAh6Pc1peBrba3xDCHbWduBZX4Cxdd3Y"
-
-#highrisk
-# apikey = "WVgEoTkWR9EFtCijEYXez4if654eskAhF29bvQazyDBht7uBJm8jBFL14lbOtHe3"
-# apisecret = "aRf9pLikKJXyGY7JFVFRw5jsWn2S5N6BlPiYCHqhyEkBYXWEpaQkyMjxosyVrIgI"
 dist = 0.1
-orderamount =20
-client = Client(apikey, apisecret)
 
 def step_size_to_precision(ss):
     return ss.find('1') - 1
@@ -31,47 +18,56 @@ def format_value(val, step_size_str):
 		return r
 	return math.trunc(int(val))	
 
-def close_position(selected_market):
+def close_position(selected_market,apikey,secret):
+	exchange = ccxt.binance({
+		'apiKey': apikey,
+		'secret': secret,
+		'options': {
+			'defaultType': 'future',
+		},
+	})
 	print("Trying close all position")
-	balance = client.get_account()
+	positions = exchange.fapiPrivateV2_get_positionrisk()
 	for i,market in enumerate(selected_market["market"]):
 		if "position" in selected_market["market"][i]:
-			print("Trying close all position from "+market["pair"])
-			orders = client.get_open_orders(symbol=market["pair"])
-			if(len(orders)>0):
-				orders = client._delete('openOrders', True, data={'symbol': market["pair"]})
-			tokenbalance = 0
-			for bal in balance['balances']:
-				if bal['asset'].lower() == (market["symbol"]).lower():
-					tokenbalance = float(bal["free"])   
-			qty = format_value(tokenbalance,market["stepSize"])
-			if(float(qty)>0):
-				order = client.create_order(
-				    symbol = market["pair"], 
-				    side = SIDE_SELL, 
-				    type = ORDER_TYPE_MARKET, 
-				    quantity = qty)
-			if "position" in selected_market["market"][i]:
-				del selected_market["market"][i]["position"]
-			update_status(selected_market)
+			for position in positions:
+				if(position["symbol"]==market["pair"]):
+					print("Trying close all position from "+market["pair"])
+					qty = format_value(position['positionAmt'],market["stepSize"])
+					if(float(qty)>0):
+						order = exchange.create_order(
+						    symbol=market["pair"],
+						    side='SELL',
+						    type="MARKET",
+						    amount=qty)
+					orders = exchange.fetchOrders(market["pair"])
+					if(len(orders)>0):
+						for order in orders:
+							exchange.cancelOrder(order["info"]["orderId"],market["pair"])
+					if "position" in selected_market["market"][i]:
+						del selected_market["market"][i]["position"]
+					update_status(selected_market)
 
-def send_stoporder(market):
+def send_stoporder(market,orderamount,exchange):
 	print("Trying set stop order",market["pair"])
 	breaklevel = format_value(market["breakoutlevel"],market["tickSize"])
 	qty = format_value(float(orderamount)/float(breaklevel),market["stepSize"])
-
-
-	order = client.create_order(
-	    symbol = market["pair"], 
-	    side = SIDE_BUY, 
-	    type = ORDER_TYPE_STOP_LOSS_LIMIT, 
-	    timeInForce = TIME_IN_FORCE_GTC, 
-	    quantity = qty, 
-	    price = breaklevel, 
-	    stopPrice = breaklevel)
+	order = exchange.create_order(
+	    symbol=market["pair"],
+	    side='BUY',
+	    type="STOP_MARKET",
+	    amount=qty,
+	    params = {'stopPrice':breaklevel})
 	return order
 
-def monitor(selected_market,maxPosition):
+def monitor(selected_market,maxPosition,apikey,secret):
+	exchange = ccxt.binance({
+		'apiKey': apikey,
+		'secret': secret,
+		'options': {
+			'defaultType': 'future',
+		},
+	})	
 	limit_positions = 0
 	positionlist = ""
 	for market in selected_market["market"]:
@@ -87,12 +83,12 @@ def monitor(selected_market,maxPosition):
 		if "position" in market:
 			positionlist = positionlist + " "+market["pair"]
 		else:
-			avg_price = client.get_avg_price(symbol=market["pair"])
-			dist_percent = (market["breakoutlevel"]-float(avg_price["price"]))/market["breakoutlevel"]
-			print("symbol:"+market["pair"]+"  price:"+avg_price["price"]+"  breakout:"+ str(market["breakoutlevel"]))
+			avg_price = exchange.fetchTicker(market["pair"])
+			dist_percent = (market["breakoutlevel"]-float(avg_price["average"]))/market["breakoutlevel"]
+			print("symbol:"+market["pair"]+"  price:"+str(avg_price["average"])+"  breakout:"+ str(market["breakoutlevel"]))
 			if dist_percent>0 and dist_percent<dist :
-				order = send_stoporder(market)
-				selected_market["market"][i]["position"]=order["orderId"]
+				order = send_stoporder(market,selected_market["amount"],exchange)
+				selected_market["market"][i]["position"]=order["info"]["orderId"]
 				positionlist = positionlist + " "+market["pair"]
 				update_status(selected_market)
 	print ("Position list")
