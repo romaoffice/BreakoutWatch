@@ -40,10 +40,11 @@ def close_position(selected_market,apikey,secret):
 						    side='SELL',
 						    type="MARKET",
 						    amount=qty)
-					orders = exchange.fetchOrders(market["pair"])
+					orders = exchange.fetchOpenOrders(market["pair"])
 					if(len(orders)>0):
 						for order in orders:
 							exchange.cancelOrder(order["info"]["orderId"],market["pair"])
+
 					if "position" in selected_market["market"][i]:
 						del selected_market["market"][i]["position"]
 					update_status(selected_market)
