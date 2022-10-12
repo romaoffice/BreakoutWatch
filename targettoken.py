@@ -124,7 +124,7 @@ def update_token_list(runmode,maxPosition,today_string,apikey,secret):
             for filteritem in pairinfo["info"]["filters"]:
                 if(filteritem["filterType"]=="PRICE_FILTER"):
                     top100[pairinfo["baseId"]]["tickSize"] = filteritem["tickSize"]
-                if(filteritem["filterType"]=="MARKET_LOT_SIZE"):
+                if(filteritem["filterType"]=="LOT_SIZE"):
                     top100[pairinfo["baseId"]]["stepSize"] = filteritem["stepSize"]
 
             candles = exchange.fetchOHLCV (symbol, '1d')
