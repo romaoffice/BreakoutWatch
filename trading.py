@@ -87,11 +87,11 @@ def monitor(selected_market,maxPosition,apikey,secret):
 			avg_price = exchange.fetchTicker(market["pair"])
 			dist_percent = (market["breakoutlevel"]-float(avg_price["average"]))/market["breakoutlevel"]
 			print("symbol:"+market["pair"]+"  price:"+str(avg_price["average"])+"  breakout:"+ str(market["breakoutlevel"]))
-			if dist_percent>0 and dist_percent<dist :
-				order = send_stoporder(market,selected_market["amount"],exchange)
-				selected_market["market"][i]["position"]=order["info"]["orderId"]
-				positionlist = positionlist + " "+market["pair"]
-				update_status(selected_market)
+			#if dist_percent>0 and dist_percent<dist :
+			order = send_stoporder(market,selected_market["amount"],exchange)
+			selected_market["market"][i]["position"]=order["info"]["orderId"]
+			positionlist = positionlist + " "+market["pair"]
+			update_status(selected_market)
 	print ("Position list")
 	print (positionlist)
 
