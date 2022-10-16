@@ -33,13 +33,14 @@ def close_position(selected_market,apikey,secret):
 			for position in positions:
 				if(position["symbol"]==market["pair"]):
 					print("Trying close all position from "+market["pair"])
-					qty = format_value(position['positionAmt'],market["stepSize"])
+					qty = position['positionAmt']
 					if(float(qty)>0):
 						order = exchange.create_order(
 						    symbol=market["pair"],
 						    side='SELL',
 						    type="MARKET",
-						    amount=qty)
+						    amount=qty,
+						    params={"reduceOnly": True})
 					orders = exchange.fetchOpenOrders(market["pair"])
 					if(len(orders)>0):
 						for order in orders:
@@ -69,29 +70,39 @@ def monitor(selected_market,maxPosition,apikey,secret):
 			'defaultType': 'future',
 		},
 	})	
-	limit_positions = 0
 	positionlist = ""
-	for market in selected_market["market"]:
-		if "position" in market:
-			limit_positions = limit_positions + 1
-			positionlist = positionlist + " "+market["pair"]
-	if(limit_positions>=maxPosition):
-		print ("Position list")
-		print (positionlist)
-		return
-	positionlist =""
 	for i,market in enumerate(selected_market["market"]):
-		if "position" in market:
-			positionlist = positionlist + " "+market["pair"]
+		avg_price = exchange.fetchTicker(market["pair"])
+		dist_percent = (market["breakoutlevel"]-float(avg_price["average"]))/market["breakoutlevel"]
+		selected_market["market"][i]["dist_percent"]=dist_percent
+		print("symbol:"+market["pair"]+"  dist_percent:"+str(dist_percent))
+	for i in range(0, len(selected_market["market"])-1):
+		for j in range(i+1, len(selected_market["market"])):
+			if selected_market["market"][i]["dist_percent"]>selected_market["market"][j]["dist_percent"]:
+				temp = selected_market["market"][i]
+				selected_market["market"][i] = selected_market["market"][j]
+				selected_market["market"][j] = temp
+	limit_positions = 0
+	for i,market in enumerate(selected_market["market"]):
+		if(limit_positions<maxPosition):
+			if "position" in market:
+				limit_positions = limit_positions + 1
+				positionlist = positionlist + " "+market["pair"]
+			else:
+				order = send_stoporder(market,selected_market["amount"],exchange)
+				selected_market["market"][i]["position"]=order["info"]["orderId"]
+				limit_positions = limit_positions + 1
+				positionlist = positionlist + " "+market["pair"]
+				update_status(selected_market)
 		else:
-			avg_price = exchange.fetchTicker(market["pair"])
-			dist_percent = (market["breakoutlevel"]-float(avg_price["average"]))/market["breakoutlevel"]
-			print("symbol:"+market["pair"]+"  price:"+str(avg_price["average"])+"  breakout:"+ str(market["breakoutlevel"]))
-			#if dist_percent>0 and dist_percent<dist :
-			order = send_stoporder(market,selected_market["amount"],exchange)
-			selected_market["market"][i]["position"]=order["info"]["orderId"]
-			positionlist = positionlist + " "+market["pair"]
-			update_status(selected_market)
+			if (market["dist_percent"]>0):
+				try:
+					orderId = selected_market["market"][i]["position"]
+					del selected_market["market"][i]["position"]
+					exchange.cancelOrder(orderId,market["pair"])
+					update_status(selected_market)
+				except:
+					pass
 	print ("Position list")
 	print (positionlist)
 

@@ -140,7 +140,7 @@ def update_token_list(runmode,maxPosition,today_string,apikey,secret):
 
     #sorting
     selected_market = []
-    for num in range(0, maxPosition):
+    for num in range(0, maxPosition*2):
         maxscore = 0
         selectedtoken = ""
         for token in top100:

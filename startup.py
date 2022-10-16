@@ -4,7 +4,7 @@ from datetime import datetime
 import trading
 import targettoken
 import ccxt
-import time 
+import time
 import sys
 
 runmode = 0 #medium risk
@@ -46,7 +46,7 @@ try:
             date_object1 = datetime.strptime(selected_market["date"], "%Y_%m_%d").date()
             date_object2 = datetime.strptime(today_string, "%Y_%m_%d").date()
             dayspan = date_object2-date_object1
-            if dayspan.days>1:
+            if dayspan.days>=2:
                 needupdate = True
         else:
             if selected_market["date"]!=today_string:
