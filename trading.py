@@ -1,6 +1,8 @@
 from targettoken import update_status
+from datetime import datetime
 import math
 import ccxt
+import time
 
 dist = 0.1
 
@@ -10,6 +12,7 @@ def step_size_to_precision(ss):
 def round_down(value, decimals):
     factor = 1 / (10 ** decimals)
     return (value // factor) * factor
+
 def format_value(val, step_size_str):
 	precision = step_size_to_precision(step_size_str)
 	if precision > 0:
@@ -18,7 +21,7 @@ def format_value(val, step_size_str):
 		return r
 	return math.trunc(int(val))	
 
-def close_position(selected_market,apikey,secret):
+def close_position(selected_market,apikey,secret,runmode):
 	exchange = ccxt.binance({
 		'apiKey': apikey,
 		'secret': secret,
@@ -33,25 +36,46 @@ def close_position(selected_market,apikey,secret):
 			for position in positions:
 				if(position["symbol"]==market["pair"]):
 					print("Trying close all position from "+market["pair"])
-					qty = position['positionAmt']
-					if(float(qty)>0):
-						order = exchange.create_order(
-						    symbol=market["pair"],
-						    side='SELL',
-						    type="MARKET",
-						    amount=qty,
-						    params={"reduceOnly": True})
 					orders = exchange.fetchOpenOrders(market["pair"])
 					if(len(orders)>0):
+						print("cancel orders from ",market["pair"])
 						for order in orders:
 							exchange.cancelOrder(order["info"]["orderId"],market["pair"])
+						time.sleep(5)
 
-					if "position" in selected_market["market"][i]:
-						del selected_market["market"][i]["position"]
+					qty = position['positionAmt']
+					if(float(qty)>0):
+						if (runmode==2):
+							selected_market["market"][i]["date"]
+							date_object1 = datetime.strptime(selected_market["date"], "%Y_%m_%d").date()
+							date_object2 = datetime.strptime(today_string, "%Y_%m_%d").date()
+							dayspan = date_object2-date_object1
+							if dayspan.days>=2:
+								order = exchange.create_order(
+								    symbol=market["pair"],
+								    side='SELL',
+								    type="MARKET",
+								    amount=qty,
+								    params={"reduceOnly": True})
+								if "position" in selected_market["market"][i]:
+									del selected_market["market"][i]["position"]
+						else:
+							order = exchange.create_order(
+							    symbol=market["pair"],
+							    side='SELL',
+							    type="MARKET",
+							    amount=qty,
+							    params={"reduceOnly": True})
+							if "position" in selected_market["market"][i]:
+								del selected_market["market"][i]["position"]
+					else:
+						if "position" in selected_market["market"][i]:
+							del selected_market["market"][i]["position"]
 					update_status(selected_market)
+	return selected_market
 
 def send_stoporder(market,orderamount,exchange):
-	print("Trying set stop order",market["pair"])
+	print("Trying set stop order",market["pair"],market["breakoutlevel"])
 	breaklevel = format_value(market["breakoutlevel"],market["tickSize"])
 	qty = format_value(float(orderamount)/float(breaklevel),market["stepSize"])
 	order = exchange.create_order(
@@ -88,12 +112,17 @@ def monitor(selected_market,maxPosition,apikey,secret):
 			if "position" in market:
 				limit_positions = limit_positions + 1
 				positionlist = positionlist + " "+market["pair"]
+				print("position have",market["pair"])
 			else:
+				dateTimeObj = datetime.now()
+				today_string = dateTimeObj.strftime("%Y_%m_%d")
 				order = send_stoporder(market,selected_market["amount"],exchange)
 				selected_market["market"][i]["position"]=order["info"]["orderId"]
+				selected_market["market"][i]["date"]=today_string
 				limit_positions = limit_positions + 1
 				positionlist = positionlist + " "+market["pair"]
 				update_status(selected_market)
+				print("position placed",market["pair"])
 		else:
 			if (market["dist_percent"]>0):
 				try:
@@ -101,6 +130,8 @@ def monitor(selected_market,maxPosition,apikey,secret):
 					del selected_market["market"][i]["position"]
 					exchange.cancelOrder(orderId,market["pair"])
 					update_status(selected_market)
+					print("position canceled",market["pair"])
+
 				except:
 					pass
 	print ("Position list")

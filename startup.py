@@ -40,17 +40,8 @@ try:
         selected_market = json.load(f)
         f.close()
         needupdate = False
-        if selected_market["mode"]!=runmode :
+        if selected_market["mode"]!=runmode or selected_market["date"]!=today_string:
             needupdate = True
-        if (runmode==2):
-            date_object1 = datetime.strptime(selected_market["date"], "%Y_%m_%d").date()
-            date_object2 = datetime.strptime(today_string, "%Y_%m_%d").date()
-            dayspan = date_object2-date_object1
-            if dayspan.days>=2:
-                needupdate = True
-        else:
-            if selected_market["date"]!=today_string:
-                needupdate = True
         if needupdate:
             exchange = ccxt.binance({
                 'apiKey': apikey,
@@ -59,11 +50,21 @@ try:
                     'defaultType': 'future',
                 },
             })
-            trading.close_position(selected_market,apikey,secret)
+            selected_market = trading.close_position(selected_market,apikey,secret,runmode)
             balances = exchange.fetchBalance()
             usdtbalance = balances["USDT"]["free"]
-            selected_market = targettoken.update_token_list(runmode,maxPosition,today_string,apikey,secret)
+            newselected_market = targettoken.update_token_list(runmode,maxPosition,today_string,apikey,secret)
+            for i,market in enumerate(newselected_market["market"]):
+                have = False
+                for j,market_exist in enumerate(selected_market["market"]):
+                    if market_exist["pair"]==market["pair"]:
+                        have = True
+                        break
+                if have==False:
+                    selected_market.append(market)
+            selected_market["date"]=newselected_market["date"]
             selected_market["amount"] = usdtbalance/maxPosition
+            print(selected_market)
             targettoken.update_status(selected_market)
         trading.monitor(selected_market,maxPosition,apikey,secret)
         time.sleep(60)
