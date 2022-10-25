@@ -159,7 +159,6 @@ def update_token_list(runmode,maxPosition,today_string,apikey,secret):
         print("Symbol:",selected["symbol"]," breakout level:",selected["breakoutlevel"]," Score:",selected["score"])
 
     stored_selected_market = {"mode":runmode,"date":today_string,"market":selected_market}
-    update_status(stored_selected_market)
 
     return stored_selected_market
 

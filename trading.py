@@ -47,6 +47,8 @@ def close_position(selected_market,apikey,secret,runmode):
 					if(float(qty)>0):
 						if (runmode==2):
 							selected_market["market"][i]["date"]
+							dateTimeObj = datetime.now()
+							today_string = dateTimeObj.strftime("%Y_%m_%d")
 							date_object1 = datetime.strptime(selected_market["date"], "%Y_%m_%d").date()
 							date_object2 = datetime.strptime(today_string, "%Y_%m_%d").date()
 							dayspan = date_object2-date_object1
@@ -57,8 +59,7 @@ def close_position(selected_market,apikey,secret,runmode):
 								    type="MARKET",
 								    amount=qty,
 								    params={"reduceOnly": True})
-								if "position" in selected_market["market"][i]:
-									del selected_market["market"][i]["position"]
+								del selected_market["market"][i]
 						else:
 							order = exchange.create_order(
 							    symbol=market["pair"],
@@ -66,12 +67,13 @@ def close_position(selected_market,apikey,secret,runmode):
 							    type="MARKET",
 							    amount=qty,
 							    params={"reduceOnly": True})
-							if "position" in selected_market["market"][i]:
-								del selected_market["market"][i]["position"]
+							del selected_market["market"][i]
 					else:
-						if "position" in selected_market["market"][i]:
-							del selected_market["market"][i]["position"]
-					update_status(selected_market)
+						del selected_market["market"][i]
+					
+		else:
+			del selected_market["market"][i]
+		update_status(selected_market)
 	return selected_market
 
 def send_stoporder(market,orderamount,exchange):

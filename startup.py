@@ -61,7 +61,7 @@ try:
                         have = True
                         break
                 if have==False:
-                    selected_market.append(market)
+                    selected_market["market"].append(market)
             selected_market["date"]=newselected_market["date"]
             selected_market["amount"] = usdtbalance/maxPosition
             print(selected_market)
