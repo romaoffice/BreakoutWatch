@@ -32,6 +32,7 @@ def close_position(selected_market,apikey,secret,runmode):
 	print("Trying close all position")
 	positions = exchange.fapiPrivateV2_get_positionrisk()
 	for i,market in enumerate(selected_market["market"]):
+		print('Checking',market["pair"])
 		if "position" in selected_market["market"][i]:
 			for position in positions:
 				if(position["symbol"]==market["pair"]):
@@ -44,14 +45,16 @@ def close_position(selected_market,apikey,secret,runmode):
 						time.sleep(5)
 
 					qty = position['positionAmt']
+					print(qty)
 					if(float(qty)>0):
 						if (runmode==2):
-							selected_market["market"][i]["date"]
+							
 							dateTimeObj = datetime.now()
 							today_string = dateTimeObj.strftime("%Y_%m_%d")
-							date_object1 = datetime.strptime(selected_market["date"], "%Y_%m_%d").date()
+							date_object1 = datetime.strptime(selected_market["market"][i]["date"], "%Y_%m_%d").date()
 							date_object2 = datetime.strptime(today_string, "%Y_%m_%d").date()
 							dayspan = date_object2-date_object1
+							print("mode 2:",dayspan.days,today_string,date_object1,date_object2);
 							if dayspan.days>=2:
 								order = exchange.create_order(
 								    symbol=market["pair"],
@@ -111,20 +114,26 @@ def monitor(selected_market,maxPosition,apikey,secret):
 	limit_positions = 0
 	for i,market in enumerate(selected_market["market"]):
 		if(limit_positions<maxPosition):
+			if market["dist_percent"]<0:
+				continue
 			if "position" in market:
 				limit_positions = limit_positions + 1
 				positionlist = positionlist + " "+market["pair"]
 				print("position have",market["pair"])
 			else:
-				dateTimeObj = datetime.now()
-				today_string = dateTimeObj.strftime("%Y_%m_%d")
-				order = send_stoporder(market,selected_market["amount"],exchange)
-				selected_market["market"][i]["position"]=order["info"]["orderId"]
-				selected_market["market"][i]["date"]=today_string
-				limit_positions = limit_positions + 1
-				positionlist = positionlist + " "+market["pair"]
-				update_status(selected_market)
-				print("position placed",market["pair"])
+				try:
+					dateTimeObj = datetime.now()
+					today_string = dateTimeObj.strftime("%Y_%m_%d")
+					order = send_stoporder(market,selected_market["amount"],exchange)
+					selected_market["market"][i]["position"]=order["info"]["orderId"]
+					selected_market["market"][i]["date"]=today_string
+					limit_positions = limit_positions + 1
+					positionlist = positionlist + " "+market["pair"]
+					update_status(selected_market)
+					print("position placed",market["pair"])
+				except:
+					pass
+				
 		else:
 			if (market["dist_percent"]>0):
 				try:
